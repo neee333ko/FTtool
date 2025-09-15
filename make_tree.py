@@ -1,6 +1,11 @@
+import sys
+import os
+
 from anytree import Node
-from spikingjelly.activation_based import neuron
-from spikingjelly.activation_based.layer import Conv2d,Linear
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..' )))
+from spikingjelly.spikingjelly.activation_based import neuron
+from spikingjelly.spikingjelly.activation_based.layer import Conv2d,Linear
 
 # 判断是否有子模块
 def is_not_basic_module(entity):
@@ -17,7 +22,7 @@ def is_not_basic_module(entity):
 
 # 造树时获取实体
 def get_next_entity(model,name):    
-    name = name.split('_')
+    name = name.split('.')
     length = len(name)
     entity = model
 
@@ -30,7 +35,7 @@ def get_next_entity(model,name):
 
 # 获取叶子节点的父节点实体
 def get_entity(model,name):
-    name = name.split('_')
+    name = name.split('.')
     length = len(name)
     entity = model
 
@@ -52,7 +57,7 @@ def makeTree(model,node,name):
         if name == "":
             node_name = name_list[i]
         else:
-            node_name = name+'_'+name_list[i]
+            node_name = name+'.'+name_list[i]
             
         cur_node = Node(node_name,parent=node)
 
@@ -76,7 +81,7 @@ def get_neuron_leaf_name(model,root):
     
     for node in leaves:
         entity = get_entity(model,node.name)
-        index = node.name.split('_')
+        index = node.name.split('.')
         index = index[-1]
         entity = getattr(entity, index)
         
@@ -93,7 +98,7 @@ def get_fc_conv_leaf_name(model,root):
     
     for node in leaves:
         entity = get_entity(model,node.name)
-        index = node.name.split('_')
+        index = node.name.split('.')
         index = index[-1]
         entity = getattr(entity, index)
 

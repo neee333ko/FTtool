@@ -14,7 +14,7 @@ def get_weight(convs,fixed_state_dict):
     
     for i in range(len(convs)):
         fixed_layer = convs[i]
-        fixed_layer = fixed_layer[:fixed_layer.index('_') + 1] + fixed_layer[fixed_layer.index('_') + 1:].replace('_', '.')
+        # fixed_layer = fixed_layer[:fixed_layer.index('_')] + fixed_layer[fixed_layer.index('_') + 1:].replace('_', '.')
         weight = copy.deepcopy(fixed_state_dict[fixed_layer + '.weight'])
         weights.append((fixed_layer,weight))
     
