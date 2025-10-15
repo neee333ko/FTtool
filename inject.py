@@ -47,17 +47,19 @@ def inject_saturate(fixed_model, names, rates):
     
     for name in names:
         entity = cn.get_entity(fixed_model, name)
-        index = name.split('_')[-1]
+        index = name.split('.')[-1]
         entity = getattr(entity, index)
         entity_list.append(entity)
         
         v_shape = entity.v.shape
-        v_ones = torch.ones(v_shape[2:], dtype=entity.v.dtype, device=entity.v.device)
+        v_ones = torch.ones(v_shape[1:], dtype=entity.v.dtype, device=entity.v.device)
         v_shape_list.append(v_ones)
         
 
     for i in range(len(entity_list)):
         num = int(v_shape_list[i].numel() * rates[i])  
+        
+        print("The saturate neruon number in ",names[i],"is: ",num)
         
         v_flat = v_shape_list[i].view(-1)
         total_elements = v_flat.numel()
@@ -80,18 +82,20 @@ def inject_dead(fixed_model, names, rates):
 
     for name in names:
         entity = cn.get_entity(fixed_model, name)
-        index = name.split('_')[-1]
+        index = name.split('.')[-1]
         entity = getattr(entity, index)
         entity_list.append(entity)
         
         
         v_shape = entity.v.shape
-        v_ones = torch.ones(v_shape[2:], dtype=entity.v.dtype, device=entity.v.device)
+        v_ones = torch.ones(v_shape[1:], dtype=entity.v.dtype, device=entity.v.device)
         v_shape_list.append(v_ones)
         
 
     for i in range(len(entity_list)):
         num = int(v_shape_list[i].numel() * rates[i])  
+        
+        print("The dead neruon number in ",names[i],"is: ",num)
         
         v_flat = v_shape_list[i].view(-1)
         total_elements = v_flat.numel()
