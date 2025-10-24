@@ -9,35 +9,50 @@ import torch
 
 
 
-def get_weight(convs,fixed_state_dict):
+def get_weight(convs, fixed_state_dict):
     weights=[]
     
     for i in range(len(convs)):
         fixed_layer = convs[i]
         # fixed_layer = fixed_layer[:fixed_layer.index('_')] + fixed_layer[fixed_layer.index('_') + 1:].replace('_', '.')
+        print(convs)
         weight = copy.deepcopy(fixed_state_dict[fixed_layer + '.weight'])
+        
         weights.append((fixed_layer,weight))
     
     return weights
 
-
-# 权重错误注入
-def inject_weight(fixed_model,rate):
+def get_convs(fixed_model):
     fixed_state_dict = copy.deepcopy(fixed_model.state_dict())
 
     root = Node('root')
     cn.makeTree(fixed_model,root,"")
 
     convs = cn.get_fc_conv_leaf_name(fixed_model,root)
-    weights=get_weight(convs, fixed_state_dict)
+    
+    return convs, fixed_state_dict
 
-    for fixed_layer,weight in weights:
-        faulty_weight = inject_MBF(copy.deepcopy(weight), rate)
-        # diff_count = torch.sum(faulty_weight != weight).item()
-        # print(f"Number of different elements: {diff_count}")
-        fixed_state_dict[fixed_layer + '.weight'] = faulty_weight
-   
-    return fixed_state_dict
+
+# 权重错误注入
+def inject_weight(convs, fixed_state_dict, rate, maps):
+    weights=get_weight(convs, fixed_state_dict)
+    returned_maps = []
+
+    if maps is None:
+        for fixed_layer,weight in weights:
+            faulty_weight, mapping = inject_MBF(copy.deepcopy(weight), rate)
+            returned_maps.append((fixed_layer,mapping))
+            # diff_count = torch.sum(faulty_weight != weight).item()
+            # print(f"Number of different elements: {diff_count}")
+            fixed_state_dict[fixed_layer + '.weight'] = faulty_weight
+    else:
+        for index, value in enumerate(weights, start=0):
+            fixed_layer = value[0]
+            weight = value[1]
+            faulty_weight = inject_MBF_by_Mapping(copy.deepcopy(weight),maps[index][1])
+            fixed_state_dict[fixed_layer + '.weight'] = faulty_weight
+        
+    return fixed_state_dict, returned_maps
 
 
 # 脉冲神经元饱和错误注入，调用该方法前不要reset模型状态
@@ -110,9 +125,15 @@ def inject_dead(fixed_model, names, rates):
         
 
 
+def inject_MBF_by_Mapping(weights, mapping):
+    indices = np.argwhere(mapping == 1)
+    for idx in indices:
+        idx_tuple = tuple(idx)             
+        weights[idx_tuple[:-1]] = inject_SBF(weights[idx_tuple[:-1]],idx_tuple[-1])
+    
+    return weights
+        
 
-    
-    
 
 # Mutiple_bit_flip
 def inject_MBF(weights,rate):
@@ -165,7 +186,7 @@ def inject_MBF(weights,rate):
             
     print(f'注入错误个数 ：{count} 当前层总参数 {size}')
     
-    return weights
+    return weights, flip_bit
 
 
 # Single_bit_flip
