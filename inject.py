@@ -87,6 +87,55 @@ def inject_saturate(fixed_model, names, rates):
         
         entity_list[i].v_threshold = v_shape_list[i]
 
+    
+
+def inject_saturate_by_map(fixed_model, names, rates, map):
+    if rates is not None:
+        if len(names) != len(rates):
+            raise("names len should equal rates len")
+    else:
+        if len(names) != len(map):
+            raise("names len should equal map len")
+
+    entity_list = []
+    v_shape_list = []
+    indice_list = []
+    
+    for name in names:
+        entity = cn.get_entity(fixed_model, name)
+        index = name.split('.')[-1]
+        entity = getattr(entity, index)
+        entity_list.append(entity)
+        
+        v_shape = entity.v.shape
+        v_ones = torch.ones(v_shape[1:], dtype=entity.v.dtype, device=entity.v.device)
+        v_shape_list.append(v_ones)
+        
+
+    for i in range(len(entity_list)):
+        if rates is not None:
+            num = int(v_shape_list[i].numel() * rates[i])  
+        
+            print("The saturate neruon number in ",names[i],"is: ",num)
+            
+            total_elements = v_flat.numel()
+            indices = torch.randperm(total_elements)[:num]
+            
+            indice_list.append(indices)
+        else:
+            indices = map[i]
+            
+        v_flat = v_shape_list[i].view(-1)
+        
+        v_flat[indices] = torch.finfo(v_flat.dtype).min
+        
+        v_shape_list[i] = v_flat.view(v_shape_list[i].shape)
+        
+        entity_list[i].v_threshold = v_shape_list[i]
+
+    return indice_list
+
+
 
 
 # 脉冲神经元死亡错误注入，调用该方法前不要reset模型状态
