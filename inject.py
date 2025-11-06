@@ -113,6 +113,8 @@ def inject_saturate_by_map(fixed_model, names, rates, map):
         
 
     for i in range(len(entity_list)):
+        v_flat = v_shape_list[i].view(-1)
+        
         if rates is not None:
             num = int(v_shape_list[i].numel() * rates[i])  
         
@@ -125,7 +127,6 @@ def inject_saturate_by_map(fixed_model, names, rates, map):
         else:
             indices = map[i]
             
-        v_flat = v_shape_list[i].view(-1)
         
         v_flat[indices] = torch.finfo(v_flat.dtype).min
         
